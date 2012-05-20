@@ -1,3 +1,7 @@
+*~
+*#*
+.DS*
+
 # Node .gitignore from https://github.com/github/gitignore
 lib-cov
 *.seed
