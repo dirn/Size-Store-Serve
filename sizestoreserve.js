@@ -1,6 +1,7 @@
 var express = require('express');
 var fs      = require('fs');
 var im      = require('easyimage');
+var path    = require('path');
 var raven   = require('raven');
 
 var app = module.exports = express.createServer();
@@ -63,12 +64,11 @@ app.get('*', function(req, res) {
       f = im.crop;
     }
 
-    try {
-      fs.statSync(options.dst);
+    if (path.existsSync(options.dst)) {
       fs.readFile(options.dst, function(err, data) {
         res.send(data);
       });
-    } catch (err) {
+    } else {
       f(options, function(err, image) {
         console.log('Image created:');
         console.log(image);
