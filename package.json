@@ -1,0 +1,24 @@
+{
+  "author": "Andy Dirnberger",
+  "name": "Size-Store-Serve",
+  "version": "0.1.0",
+  "description": "A Node.js application to resize and serve images stored on S3.",
+  "licenses": [
+    {
+      "type": "BSD-3-Clause"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dirn/Image-Resizer"
+  },
+  "engines": {
+    "node": ">= 0.4.1"
+  },
+  "dependencies": {
+    "easyimage": "0.1.1",
+    "express": ">= 2.5",
+    "raven": ">= 0.2.3"
+  },
+  "main": "sizestoreserve"
+}
