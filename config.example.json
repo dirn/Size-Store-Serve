@@ -1,0 +1,7 @@
+{
+    "s3": {
+        "key": "AWS_ACCESS_KEY_ID",
+        "secret": "AWS_SECRET_ACCESS_KEY",
+        "bucket": "AWS_STORAGE_BUCKET_NAME"
+    }
+}

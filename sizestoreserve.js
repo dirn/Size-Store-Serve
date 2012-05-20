@@ -1,10 +1,31 @@
 var express = require('express');
 var fs      = require('fs');
 var im      = require('easyimage');
+var mime    = require('mime');
 var path    = require('path');
 var raven   = require('raven');
 
 var app = module.exports = express.createServer();
+
+var loadConfig = function() {
+  var config;
+  if (path.existsSync(__dirname + '/config.json')) {
+    config = JSON.parse(fs.readFileSync(__dirname + '/config.json'));
+  } else {
+    config = {
+      s3: {
+        key: process.env.AWS_ACCESS_KEY_ID,
+        secret: process.env.AWS_SECRET_ACCESS_KEY,
+        bucket: process.env.AWS_STORAGE_BUCKET_NAME
+      }
+    };
+  }
+
+  return config;
+};
+var config = loadConfig();
+
+var knox = require('knox').createClient(config.s3);
 
 // Configuration
 app.configure(function() {
@@ -72,6 +93,13 @@ app.get('*', function(req, res) {
       f(options, function(err, image) {
         console.log('Image created:');
         console.log(image);
+        knox.putFile(image.name, '/' + image.name, {'Content-Type': mime.lookup(image.type)}, function(err, data) {
+          if (err) {
+            console.log(err);
+          } else {
+            console.log('Saved to S3: ' + options.dst);
+          }
+        });
         fs.readFile(image.name, function(err, data) {
           res.send(data);
         });
