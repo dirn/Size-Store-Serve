@@ -1,9 +1,6 @@
 fs               = require 'fs'
 path             = require 'path'
 {spawn, exec}    = require 'child_process'
-im               = require 'easyimage'
-express          = require 'express'
-raven            = require 'raven'
 
 Array::unique = ->
   output = {}
