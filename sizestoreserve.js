@@ -62,50 +62,101 @@ app.get('*', function(req, res) {
       height = req.param('h', 0),
       crop   = req.param('crop', false);
 
-  im.info(__dirname + url, function(err, image) {
-    if (err) throw err;
+  var realFileName = url;
+  if (width > 0) {
+    realFileName += '_w' + width;
+  }
+  if (height > 0) {
+    realFileName += '_h' + height;
+  }
+  if (crop) {
+    realFileName += '_c';
+  }
 
-    res.contentType(image.type);
+  var tmpName = __dirname + '/tmp/' + Math.floor(Math.random() * 10000);
 
-    var f = im.resize;
-    var options = {
-      src: __dirname + url, dst: __dirname + url,
-      width: width, height: height
-    };
-    if (width > 0) {
-      options.dst += '_w' + width;
-    }
-    if (height > 0) {
-      options.dst += '_h' + height;
-    }
-    if (crop) {
-      options.dst += '_c';
-      options.cropwidth = options.width;
-      options.cropheight = options.height;
-      f = im.crop;
-    }
+  // Open a file and output its contents to the response, calling callback after
+  var sendFileToResponse = function(fileName, callback) {
+    im.info(fileName, function(err, image) {
+      if (err) throw err;
 
-    if (path.existsSync(options.dst)) {
-      fs.readFile(options.dst, function(err, data) {
+      res.contentType(image.type);
+      fs.readFile(fileName, function(err, data) {
         res.send(data);
+        callback();
       });
-    } else {
-      f(options, function(err, image) {
-        console.log('Image created:');
-        console.log(image);
-        knox.putFile(image.name, '/' + image.name, {'Content-Type': mime.lookup(image.type)}, function(err, data) {
-          if (err) {
-            console.log(err);
+    });
+  };
+
+  // Copy a file to S3
+  var sendFileToS3 = function(fileName, originalName, fileType) {
+    knox.putFile(originalName, fileName, {'Content-Type': mime.lookup(fileType)}, function(err, data) {
+      if (err) {
+        console.log(err);
+      } else {
+        console.log('Saved to S3: ' + originalName);
+      }
+    });
+  };
+
+  // Delete files from the local file system
+  var cleanUp = function() {
+    for (var arg in arguments) {
+      fs.unlink(arguments[arg]);
+    }
+  };
+
+  var copyFromS3 = function(fileName, originalName, tmpName, alter) {
+    knox.get(fileName).on('response', function(response) {
+      if (200 == response.statusCode) {
+        var stream = fs.createWriteStream(tmpName);
+        response.on('data', function(chunk) {
+          stream.write(chunk);
+        }).on('end', function() {
+          console.log('temporary file created at ' + tmpName);
+
+          if (alter) {
+            var f = im.resize;
+            var tmpNameDst = tmpName + '_2';
+
+            var options = {
+              src: tmpName, dst: tmpNameDst,
+              width: width, height: height
+            };
+            if (crop) {
+              options.cropwidth = options.width;
+              options.cropheight = options.height;
+              f = im.crop;
+            }
+
+            f(options, function(err, image) {
+              console.log('new image created: ' + realFileName);
+              var headers = {'Content-Type': mime.lookup(image.type)};
+              if (config.s3.private) {
+                headers['x-amz-acl'] = 'private';
+              }
+
+              sendFileToS3(realFileName, tmpNameDst, image.type);
+
+              sendFileToResponse(tmpNameDst, function() {
+                cleanUp(tmpName, tmpNameDst);
+              });
+            });
           } else {
-            console.log('Saved to S3: ' + options.dst);
+            sendFileToResponse(tmpName, function() {
+              cleanUp(tmpName);
+            });
           }
         });
-        fs.readFile(image.name, function(err, data) {
-          res.send(data);
-        });
-      });
-    }
-  });
+      } else if (!alter) {
+        copyFromS3(originalName, '', tmpName, true);
+      } else {
+        res.send('k thx bai', 404);
+      }
+    }).end();
+  };
+
+  copyFromS3(realFileName, url, tmpName, false);
 });
 
 if (!module.parent) {
