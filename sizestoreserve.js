@@ -42,7 +42,7 @@ app.configure('development', function() {
 
 app.configure('production', function() {
   app.use(express.errorHandler());
-  app.error(raven.middleware.express('SENTRY_DSN'));
+  app.error(raven.middleware.express(process.env.SENTRY_DSN));
 });
 
 // Routes
