@@ -13,11 +13,12 @@
     "url": "https://github.com/dirn/Image-Resizer"
   },
   "engines": {
-    "node": ">= 0.4.1"
+    "node": "0.8.x",
+    "npm": "1.1.x"
   },
   "dependencies": {
     "easyimage": "0.1.1",
-    "express": ">= 2.5",
+    "express": "2.5.x",
     "knox": ">= 0.0.9",
     "mime": ">= 1.2.5",
     "raven": ">= 0.2.3"

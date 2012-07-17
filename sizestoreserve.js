@@ -2,14 +2,13 @@ var express = require('express');
 var fs      = require('fs');
 var im      = require('easyimage');
 var mime    = require('mime');
-var path    = require('path');
 var raven   = require('raven');
 
 var app = module.exports = express.createServer();
 
 var loadConfig = function() {
   var config;
-  if (path.existsSync(__dirname + '/config.json')) {
+  if (fs.existsSync(__dirname + '/config.json')) {
     config = JSON.parse(fs.readFileSync(__dirname + '/config.json'));
   } else {
     config = {
